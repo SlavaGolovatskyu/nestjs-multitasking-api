@@ -1,33 +1,36 @@
 version: '3.8'
 
 services:
-  postgres:
+  db:
     image: postgres:14.7-alpine
     restart: always
-    env_file:
-      - .env
-    environment:
-      - POSTGRES_USER=${TYPEORM_USERNAME}
-      - POSTGRES_PASSWORD=${TYPEORM_PASSWORD}
-      - POSTGRES_DB=${TYPEORM_DATABASE}
+    env_file: ".env"
     volumes:
       - ./pgdata:/var/lib/postgresql/data
     ports:
       - ${TYPEORM_PORT}:${TYPEORM_PORT}
-    networks:
-      - postgres
 
-  nestjs-api:
-    image: nestjs-api
-    env_file:
-      - .env
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: alias-arena
+    env_file: ".env"
     ports:
-      - "${API_PORT}:${API_PORT}"
+      - ${API_PORT}:${API_PORT}
     depends_on:
-      - postgres
-    networks:
-      - postgres
-
-networks:
-  postgres:
-    driver: bridge
+      - db
+    volumes:
+      - ./src:/app/src
+  
+  pgadmin:
+    image: dpage/pgadmin4
+    restart: always
+    container_name: alias-arena-pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=admin@admin.com
+      - PGADMIN_DEFAULT_PASSWORD=pgadmin4
+    ports:
+      - '5050:80'
+    depends_on:
+      - db
